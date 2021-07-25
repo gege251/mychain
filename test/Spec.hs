@@ -9,8 +9,8 @@ import Blockheader (Headerchain)
 import qualified Blockheader
 import qualified Main
 import qualified MerkleTree
-import Relude hiding (head)
-import Relude.Unsafe (fromJust, head)
+import Relude hiding (head, last, tail)
+import Relude.Unsafe (fromJust, head, last, tail)
 import Test.Tasty
 import Test.Tasty.QuickCheck (arbitrary, elements)
 import Test.Tasty.QuickCheck as QC
@@ -33,7 +33,7 @@ tests =
           MerkleTree.verifyPartialMerkleTree txId partialMerkleTree,
       QC.testProperty "Tx verification" $
         \(Txs txs) ->
-          Tx.verifyTx txs (head txs)
+          Tx.verifyTx txs ((snd . Tx.getTxWithId . last) txs)
     ]
 
 instance Arbitrary Headerchain where
@@ -69,16 +69,32 @@ instance Arbitrary PartialTreeWithTxId where
     let merkleTree = MerkleTree.mkMerkleTree txIds
     return $ PartialTreeWithTxId (fromJust $ MerkleTree.mkPartialMerkleTree txId merkleTree, txId)
 
-newtype Txs = Txs {getTxs :: [Tx.Tx]} deriving (Show)
+newtype Txs = Txs {getTxs :: [Tx.TxWithId]} deriving (Show)
 
 instance Arbitrary Txs where
   arbitrary = do
     pubKeyHashes :: [Integer] <- repeat <$> elements [1, 2, 3, 4]
-    values :: [Int] <- getNonNegative <<$>> arbitrary
+    values :: [Int] <- getNonNegative <<$>> getNonEmpty <$> arbitrary
+
+    let sortedValues = reverse (sort values)
 
     return $
-      Txs $
-        scanl
-          (\prevTx (pkh, v) -> Tx.Tx (Tx.txOutputs prevTx) (Tx.UTxO pkh v :| []))
-          (Tx.CoinBase (Tx.UTxO (head pubKeyHashes) 1000 :| []))
-          $ zip pubKeyHashes values
+      zip pubKeyHashes (tail sortedValues)
+        & scanl
+          ( \(Tx.TxWithId (prevTxId, prevTx)) (pkh, v) ->
+              let prevOutputLength = length $ Tx.txOutputs prevTx
+                  inputs =
+                    ( \i ->
+                        Tx.TxInput
+                          { Tx.txInId = prevTxId,
+                            Tx.txInUtxoIndex = i,
+                            Tx.txInScriptSig = pkh
+                          }
+                    )
+                      <$> (0 :| [1 .. (prevOutputLength - 1)])
+                  outputs = (Tx.UTxO pkh v :| [])
+                  nextTx = Tx.Tx {Tx.txInputs = inputs, Tx.txOutputs = outputs}
+               in Tx.mkTxWithId nextTx
+          )
+          (Tx.mkTxWithId (Tx.CoinBase (Tx.UTxO (head pubKeyHashes) (head sortedValues) :| [])))
+        & Txs
