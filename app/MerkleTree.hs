@@ -58,6 +58,10 @@ verifyPartialMerkleTree txId (PMNode hash l r) =
   hashPair (nodeHash' l) r == hash
     && verifyPartialMerkleTree txId l
 
+getMerkleRoot :: MTree -> Integer
+getMerkleRoot (MLeaf root) = root
+getMerkleRoot (MNode root _ _) = root
+
 -- | Concatenates and hashes two hash numbers (used for Merkle trees)
 hashPair :: Integer -> Integer -> Integer
 hashPair x y | x > y = hashPair y x

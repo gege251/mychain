@@ -20,20 +20,20 @@ data Headerchain
   | Cons Integer Blockheader Headerchain
   deriving (Show)
 
-findBlock :: Integer -> (Int -> Blockheader) -> Int -> (Integer, Blockheader)
-findBlock difficulty mkHeader nonce =
+doWork :: Integer -> (Int -> Blockheader) -> Int -> (Integer, Blockheader)
+doWork difficulty mkHeader nonce =
   let headerAttempt = mkHeader nonce
    in case sha256 (show headerAttempt) of
         blockId
           | blockId < difficulty ->
             (blockId, headerAttempt)
         _ ->
-          findBlock difficulty mkHeader (nonce + 1)
+          doWork difficulty mkHeader (nonce + 1)
 
 appendHeader :: Integer -> Integer -> Int -> Headerchain -> Headerchain
 appendHeader _ _ _ Nil = Nil
 appendHeader difficulty merkleRoot time chain@(Cons prevHash _ _) =
-  let (blockId, header) = findBlock difficulty (Blockheader merkleRoot prevHash time) 0
+  let (blockId, header) = doWork difficulty (Blockheader merkleRoot prevHash time) 0
    in Cons blockId header chain
 
 verifyHeaders :: Integer -> Headerchain -> Bool
