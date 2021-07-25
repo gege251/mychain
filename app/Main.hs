@@ -3,6 +3,7 @@
 
 module Main where
 
+import Block
 import Blockheader (Blockheader (..), Headerchain (..))
 import MerkleTree (mkMerkleTree)
 import Relude
