@@ -46,19 +46,31 @@ verifyTx prevTxs Tx {txInputs = txIns, txOutputs = txOuts} =
   all isJust inputUtxos -- All input utxos are valid
     && inputSum >= outputSum
   where
-    inputUtxos =
-      map
-        ( \TxInput {txInId, txInUtxoIndex, txInScriptSig} -> do
-            TxWithId (_, tx) <-
-              find (\(TxWithId (prevTxId, prevTx)) -> prevTxId == txInId) prevTxs
-            utxo <- toList (txOutputs tx) !!? txInUtxoIndex
-            if utxoPubKeyHash utxo == txInScriptSig
-              then Just utxo
-              else Nothing
-        )
-        (toList txIns)
+    inputUtxos = findInputUtxos prevTxs txIns
     inputSum = sum $ map utxoValue $ catMaybes inputUtxos
     outputSum = sum $ map utxoValue $ toList txOuts
+
+calculateFees :: [TxWithId] -> Tx -> Int
+calculateFees _ (CoinBase _) = 0
+calculateFees prevTxs Tx {txInputs = txIns, txOutputs = txOuts} =
+  inputSum - outputSum
+  where
+    inputUtxos = findInputUtxos prevTxs txIns
+    inputSum = sum $ map utxoValue $ catMaybes inputUtxos
+    outputSum = sum $ map utxoValue $ toList txOuts
+
+findInputUtxos :: [TxWithId] -> NonEmpty TxInput -> [Maybe UTxO]
+findInputUtxos prevTxs txIns =
+  map
+    ( \TxInput {txInId, txInUtxoIndex, txInScriptSig} -> do
+        TxWithId (_, tx) <-
+          find (\(TxWithId (prevTxId, prevTx)) -> prevTxId == txInId) prevTxs
+        utxo <- toList (txOutputs tx) !!? txInUtxoIndex
+        if utxoPubKeyHash utxo == txInScriptSig
+          then Just utxo
+          else Nothing
+    )
+    (toList txIns)
 
 mkMerkleTree :: NonEmpty Tx -> MTree
 mkMerkleTree txs = MerkleTree.mkMerkleTree $ mkTxId <$> txs

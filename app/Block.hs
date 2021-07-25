@@ -15,6 +15,7 @@ data BlockchainState = BlockchainState
   { bsHeaderChain :: Headerchain,
     bsBlocks :: Map Integer (MTree, NonEmpty TxWithId)
   }
+  deriving (Show)
 
 appendBlock :: Integer -> Int -> [Tx] -> Integer -> BlockchainState -> Maybe BlockchainState
 appendBlock difficulty time txs pkh BlockchainState {bsHeaderChain, bsBlocks} =

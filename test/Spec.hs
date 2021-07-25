@@ -45,7 +45,7 @@ instance Arbitrary Headerchain where
     return $
       foldl'
         (\prev (mr, t) -> Blockheader.appendHeader d mr t prev)
-        Main.genesis
+        Main.genesisHeader
         $ zip merkleRoots times
 
 instance Arbitrary MerkleTree.MTree where
