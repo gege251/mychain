@@ -5,9 +5,11 @@ module Main where
 
 import Block (BlockchainState (..), appendBlock)
 import Blockheader (Blockheader (..), Headerchain (..))
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import MerkleTree (MTree (..), mkMerkleTree)
 import Relude
 import Relude.Extra.Map as Map
+import Text.Pretty.Simple (pPrint)
 import Tx (Tx (..), TxInput (..), TxWithId (..), UTxO (..), UTxOSet (..), mkTxWithId)
 import Utils (sha256)
 
@@ -54,10 +56,11 @@ genesisState =
 
 main :: IO ()
 main = do
-  print "Demo"
   let pkh1 = 432
   let pkh2 = 543
-  let Right b2 = appendBlock 1e72 0 [] pkh1 genesisState
+  let difficulty = 1e72
+  time <- floor . toRational <$> getPOSIXTime
+  let Right b1 = appendBlock difficulty time [] pkh1 genesisState
   let tx1 =
         Tx
           ( TxInput 78902268065043156483025095612620881616981048192609966680429747496657945621891 0 pkh1
@@ -70,4 +73,5 @@ main = do
               :| []
           )
           (UTxO pkh1 9 :| [])
-  print $ appendBlock 1e72 1 [tx1, tx2] pkh1 b2
+  let Right b2 = appendBlock 1e72 1 [tx1, tx2] pkh1 b1
+  pPrint b2

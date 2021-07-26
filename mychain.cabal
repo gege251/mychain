@@ -22,8 +22,9 @@ maintainer:         gege251@mailbox.org
 extra-source-files: CHANGELOG.md
 
 common deps
-    build-depends:    base ^>=4.14.1.0, relude, cryptonite
+    build-depends:    base ^>=4.14.1.0, relude, cryptonite, time, pretty-simple
     default-language: Haskell2010
+    other-modules:    Block, Blockheader, MerkleTree, Tx, Utils
 
 executable mychain
     import: deps
@@ -45,3 +46,4 @@ test-suite tests
     ghc-options: -main-is Spec
     hs-source-dirs: app, test
     default-language: Haskell2010
+    other-modules: Main
