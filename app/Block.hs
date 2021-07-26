@@ -9,24 +9,25 @@ import Blockheader (Headerchain, appendHeader)
 import MerkleTree (MTree, getMerkleRoot)
 import Relude
 import Relude.Extra.Map as Map
-import Tx (Tx (..), TxWithId, UTxO (..), mkMerkleTree, mkTxWithId, verifyTx)
+import Tx (Tx (..), TxWithId, UTxO (..), UTxOSet, mkMerkleTree, mkTxWithId, verifyTx)
 
 data BlockchainState = BlockchainState
   { bsHeaderChain :: Headerchain,
-    bsBlocks :: Map Integer (MTree, NonEmpty TxWithId)
+    bsBlocks :: Map Integer (MTree, NonEmpty TxWithId),
+    bsUTxOSet :: UTxOSet
   }
   deriving (Show)
 
-appendBlock :: Integer -> Int -> [Tx] -> Integer -> BlockchainState -> Maybe BlockchainState
-appendBlock difficulty time txs pkh BlockchainState {bsHeaderChain, bsBlocks} =
-  if isValid
-    then
-      Just $
-        BlockchainState
-          { bsHeaderChain = updatedHeaderChain,
-            bsBlocks = Map.insert merkleRoot (merkleTree, txsWithIds) bsBlocks
-          }
-    else Nothing
+appendBlock :: Integer -> Int -> [Tx] -> Integer -> BlockchainState -> Either String BlockchainState
+appendBlock difficulty time txs pkh BlockchainState {bsHeaderChain, bsBlocks, bsUTxOSet} = do
+  updatedUtxoSet <- foldlM verifyTx bsUTxOSet blockTxs
+
+  return $
+    BlockchainState
+      { bsHeaderChain = updatedHeaderChain,
+        bsBlocks = Map.insert merkleRoot (merkleTree, txsWithIds) bsBlocks,
+        bsUTxOSet = updatedUtxoSet
+      }
   where
     coinbase = CoinBase {txOutputs = UTxO pkh 10 :| []}
     blockTxs = coinbase :| txs
@@ -35,4 +36,3 @@ appendBlock difficulty time txs pkh BlockchainState {bsHeaderChain, bsBlocks} =
     updatedHeaderChain = appendHeader difficulty merkleRoot time bsHeaderChain
     txsWithIds = fmap mkTxWithId blockTxs
     allTxs = toList txsWithIds <> concatMap (toList . snd) (toList bsBlocks)
-    isValid = all (verifyTx allTxs) txs

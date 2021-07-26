@@ -5,6 +5,7 @@
 
 module Spec where
 
+import qualified Block
 import Blockheader (Headerchain)
 import qualified Blockheader
 import qualified Main
@@ -26,14 +27,17 @@ tests =
         \headerChain ->
           let difficulty = 1e75
            in Blockheader.verifyHeaders difficulty headerChain,
+      QC.testProperty "Appending block and verifying transactions" $
+        \(Txs txsWithIds) ->
+          let difficulty = 1e75
+              pkh = 1234
+              txs = map (snd . Tx.getTxWithId) txsWithIds
+           in isRight $ Block.appendBlock difficulty 0 txs pkh Main.genesisState,
       QC.testProperty "Merklee tree verification" $
         \merkleTree -> MerkleTree.verifyMerkleTree merkleTree,
       QC.testProperty "Partial Merklee tree verification" $
         \(PartialTreeWithTxId (partialMerkleTree, txId)) ->
-          MerkleTree.verifyPartialMerkleTree txId partialMerkleTree,
-      QC.testProperty "Tx verification" $
-        \(Txs txs) ->
-          Tx.verifyTx txs ((snd . Tx.getTxWithId . last) txs)
+          MerkleTree.verifyPartialMerkleTree txId partialMerkleTree
     ]
 
 instance Arbitrary Headerchain where

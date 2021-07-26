@@ -8,7 +8,7 @@ import Blockheader (Blockheader (..), Headerchain (..))
 import MerkleTree (MTree (..), mkMerkleTree)
 import Relude
 import Relude.Extra.Map as Map
-import Tx (Tx (..), TxInput (..), TxWithId (..), UTxO (..), mkTxWithId)
+import Tx (Tx (..), TxInput (..), TxWithId (..), UTxO (..), UTxOSet (..), mkTxWithId)
 import Utils (sha256)
 
 difficulty :: Integer
@@ -43,18 +43,31 @@ genesisState =
                       :| []
                   )
                 )
-              ]
+              ],
+          bsUTxOSet =
+            UTxOSet $
+              Map.insert
+                (9035877082247029798048353064123554423368089210468831133597218371229685373943, 0)
+                (UTxO {utxoPubKeyHash = 0, utxoValue = 10})
+                mempty
         }
 
 main :: IO ()
 main = do
   print "Demo"
-  let pkh = 432
-  let Just b2 = appendBlock 1e72 0 [] pkh genesisState
+  let pkh1 = 432
+  let pkh2 = 543
+  let Right b2 = appendBlock 1e72 0 [] pkh1 genesisState
   let tx1 =
         Tx
-          ( TxInput 78902268065043156483025095612620881616981048192609966680429747496657945621891 0 pkh
+          ( TxInput 78902268065043156483025095612620881616981048192609966680429747496657945621891 0 pkh1
               :| []
           )
-          (UTxO 543 9 :| [])
-  print $ appendBlock 1e72 1 [tx1] pkh b2
+          (UTxO pkh2 9 :| [])
+  let tx2 =
+        Tx
+          ( TxInput 3354073312312241297602561830913683538826344268112606998958799508091882577646 0 pkh2
+              :| []
+          )
+          (UTxO pkh1 9 :| [])
+  print $ appendBlock 1e72 1 [tx1, tx2] pkh1 b2
