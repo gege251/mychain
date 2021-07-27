@@ -22,9 +22,9 @@ import Tx
   )
 
 data BlockchainState = BlockchainState
-  { bsHeaderChain :: Headerchain,
-    bsBlocks :: Map Integer (MTree, NonEmpty TxWithId),
-    bsUTxOSet :: UTxOSet
+  { bsHeaderChain :: Headerchain
+  , bsBlocks :: Map Integer (MTree, NonEmpty TxWithId)
+  , bsUTxOSet :: UTxOSet
   }
   deriving (Show)
 
@@ -40,8 +40,8 @@ appendBlock difficulty time txs minerPkh BlockchainState {bsHeaderChain, bsBlock
 
     let coinbase =
           CoinBase
-            { seqId = prevSeqId + 1,
-              txOutputs = UTxO minerPkh (generatedCoins + fees) :| []
+            { seqId = prevSeqId + 1
+            , txOutputs = UTxO minerPkh (generatedCoins + fees) :| []
             }
     let blockTxs = coinbase :| txs
     let updatedUtxoSetWithCoinbase = appendToUtxoSet coinbase updatedUtxoSet
@@ -55,9 +55,9 @@ appendBlock difficulty time txs minerPkh BlockchainState {bsHeaderChain, bsBlock
 
     return $
       BlockchainState
-        { bsHeaderChain = updatedHeaderChain,
-          bsBlocks = Map.insert merkleRoot (merkleTree, txsWithIds) bsBlocks,
-          bsUTxOSet = updatedUtxoSetWithCoinbase
+        { bsHeaderChain = updatedHeaderChain
+        , bsBlocks = Map.insert merkleRoot (merkleTree, txsWithIds) bsBlocks
+        , bsUTxOSet = updatedUtxoSetWithCoinbase
         }
   where
     verifyTx' (utxoSet, fees) tx = second (+ fees) <$> verifyTx utxoSet tx

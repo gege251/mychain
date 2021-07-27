@@ -26,18 +26,18 @@ tests =
     [ QC.testProperty "Blockchain headers verification" $
         \headerChain ->
           let difficulty = 1e75
-           in Blockheader.verifyHeaders difficulty headerChain,
-      QC.testProperty "Appending block and verifying transactions" $
+           in Blockheader.verifyHeaders difficulty headerChain
+    , QC.testProperty "Appending block and verifying transactions" $
         \(Txs txsWithIds) ->
           let difficulty = 1e75
               pkh = 1234
               txs = map (snd . Tx.getTxWithId) txsWithIds
            in case Block.appendBlock difficulty 0 txs pkh Main.genesisState of
                 Right _ -> True
-                Left err -> error (toText err),
-      QC.testProperty "Merklee tree verification" $
-        \merkleTree -> MerkleTree.verifyMerkleTree merkleTree,
-      QC.testProperty "Partial Merklee tree verification" $
+                Left err -> error (toText err)
+    , QC.testProperty "Merklee tree verification" $
+        \merkleTree -> MerkleTree.verifyMerkleTree merkleTree
+    , QC.testProperty "Partial Merklee tree verification" $
         \(PartialTreeWithTxId (partialMerkleTree, txId)) ->
           MerkleTree.verifyPartialMerkleTree txId partialMerkleTree
     ]
@@ -98,9 +98,9 @@ instance Arbitrary Txs where
 
             inputs =
               Tx.TxInput
-                { Tx.txInId = prevTxId,
-                  Tx.txInUtxoIndex = 0,
-                  Tx.txInScriptSig = pkh
+                { Tx.txInId = prevTxId
+                , Tx.txInUtxoIndex = 0
+                , Tx.txInScriptSig = pkh
                 }
                 :| []
 

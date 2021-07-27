@@ -8,10 +8,10 @@ import Relude
 import Utils (sha256)
 
 data Blockheader = Blockheader
-  { bhMerkleRoot :: Integer,
-    bhPrevHash :: Integer,
-    bhTime :: Int,
-    bhNonce :: Int
+  { bhMerkleRoot :: Integer
+  , bhPrevHash :: Integer
+  , bhTime :: Int
+  , bhNonce :: Int
   }
   deriving (Show)
 

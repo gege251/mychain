@@ -21,10 +21,10 @@ genesisHeader =
   Cons
     344415770509062919420042971753096059265185458253546776236905952804678601
     ( Blockheader
-        { bhMerkleRoot = 573752597514723069550837218413816788272227841783833478352734104569604474114,
-          bhPrevHash = 0,
-          bhTime = 0,
-          bhNonce = 5448
+        { bhMerkleRoot = 573752597514723069550837218413816788272227841783833478352734104569604474114
+        , bhPrevHash = 0
+        , bhTime = 0
+        , bhNonce = 5448
         }
     )
     Nil
@@ -33,27 +33,29 @@ genesisState :: BlockchainState
 genesisState =
   let coinbase =
         CoinBase
-          { seqId = 0,
-            txOutputs = UTxO 0 0 :| []
+          { seqId = 0
+          , txOutputs = UTxO 0 0 :| []
           }
    in BlockchainState
-        { bsHeaderChain = genesisHeader,
-          bsBlocks =
+        { bsHeaderChain = genesisHeader
+        , bsBlocks =
             fromList
-              [ ( 573752597514723069550837218413816788272227841783833478352734104569604474114,
-                  ( MLeaf 573752597514723069550837218413816788272227841783833478352734104569604474114,
-                    TxWithId
-                      ( 573752597514723069550837218413816788272227841783833478352734104569604474114,
-                        CoinBase
-                          { seqId = 0,
-                            txOutputs = UTxO {utxoPubKeyHash = 0, utxoValue = 10} :| []
+              [
+                ( 573752597514723069550837218413816788272227841783833478352734104569604474114
+                ,
+                  ( MLeaf 573752597514723069550837218413816788272227841783833478352734104569604474114
+                  , TxWithId
+                      ( 573752597514723069550837218413816788272227841783833478352734104569604474114
+                      , CoinBase
+                          { seqId = 0
+                          , txOutputs = UTxO {utxoPubKeyHash = 0, utxoValue = 10} :| []
                           }
                       )
                       :| []
                   )
                 )
-              ],
-          bsUTxOSet =
+              ]
+        , bsUTxOSet =
             UTxOSet $
               Map.insert
                 (573752597514723069550837218413816788272227841783833478352734104569604474114, 0)

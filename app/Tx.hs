@@ -13,9 +13,9 @@ import Utils (sha256)
 
 -- TxInput is a pair of a transactionId and the index of the utxo inside the transaction
 data TxInput = TxInput
-  { txInId :: Integer,
-    txInUtxoIndex :: Int,
-    txInScriptSig :: Integer -- For simplicty sake, this will be the public key hash
+  { txInId :: Integer
+  , txInUtxoIndex :: Int
+  , txInScriptSig :: Integer -- For simplicty sake, this will be the public key hash
   }
   deriving (Show)
 
@@ -23,12 +23,12 @@ newtype TxWithId = TxWithId {getTxWithId :: (Integer, Tx)} deriving (Show)
 
 data Tx
   = CoinBase
-      { seqId :: Int,
-        txOutputs :: NonEmpty UTxO
+      { seqId :: Int
+      , txOutputs :: NonEmpty UTxO
       }
   | Tx
-      { txInputs :: NonEmpty TxInput,
-        txOutputs :: NonEmpty UTxO
+      { txInputs :: NonEmpty TxInput
+      , txOutputs :: NonEmpty UTxO
       }
   deriving (Show)
 
@@ -41,8 +41,8 @@ isCoinBase (CoinBase _ _) = True
 isCoinBase _ = False
 
 data UTxO = UTxO
-  { utxoPubKeyHash :: Integer,
-    utxoValue :: Int
+  { utxoPubKeyHash :: Integer
+  , utxoValue :: Int
   }
   deriving (Show)
 
