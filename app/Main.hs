@@ -3,7 +3,7 @@
 
 module Main where
 
-import Block (BlockchainState (..), appendBlock, verifyBlock)
+import Block (BlockchainState (..), appendBlock, verifyChain)
 import Blockheader (Blockheader (..), Headerchain (..))
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import MerkleTree (MTree (..), mkMerkleTree)
@@ -94,6 +94,9 @@ main = do
   b3 <- appendBlock' [tx3] pkh1 b2
 
   pPrint b3
+  if verifyChain difficulty b3
+    then putStrLn "This chain is valid"
+    else putStrLn "This chain is invalid"
   where
     appendBlock' txs minerPkh lastState = do
       time <- floor . toRational <$> getPOSIXTime

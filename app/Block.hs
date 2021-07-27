@@ -14,7 +14,7 @@ import Tx
   ( Tx (..),
     TxWithId (..),
     UTxO (..),
-    UTxOSet,
+    UTxOSet (..),
     appendToUtxoSet,
     isCoinBase,
     mkMerkleTree,
@@ -84,10 +84,25 @@ verifyBlock (merkleTree, txs) =
     treeLeaves :: Set Integer = fromList $ getLeaves merkleTree
 
 verifyChain :: Integer -> BlockchainState -> Bool
-verifyChain difficulty BlockchainState {bsHeaderChain, bsBlocks} =
-  areHeadersValid && areBlocksValid && merkleRoots == merkleRoots'
+verifyChain difficulty bs@BlockchainState {bsHeaderChain, bsBlocks} =
+  areHeadersValid && areBlocksValid && areTransactionsValid && merkleRoots == merkleRoots'
   where
     areHeadersValid = verifyHeaders difficulty bsHeaderChain
     areBlocksValid = all verifyBlock bsBlocks
+    areTransactionsValid = verifyAllTransactions bs
     merkleRoots :: Set Integer = fromList $ Map.keys bsBlocks
     merkleRoots' :: Set Integer = fromList $ map bhMerkleRoot $ chainToList bsHeaderChain
+
+verifyAllTransactions :: BlockchainState -> Bool
+verifyAllTransactions BlockchainState {bsBlocks, bsHeaderChain} =
+  let merkleRoots = map bhMerkleRoot $ reverse $ chainToList bsHeaderChain
+      maybeBlocks = mapM (`Map.lookup` bsBlocks) merkleRoots
+   in case maybeBlocks of
+        Nothing -> False
+        Just blocks ->
+          let txs = map (snd . getTxWithId) $ concatMap (toList . snd) blocks
+              utxoSet = UTxOSet mempty
+           in case foldlM (\us tx -> fst <$> verifyTx us tx) utxoSet txs of
+                Left e -> error (toText e)
+                Right updatedUtxoSet -> do
+                  True
