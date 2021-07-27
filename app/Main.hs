@@ -3,7 +3,7 @@
 
 module Main where
 
-import Block (BlockchainState (..), appendBlock)
+import Block (BlockchainState (..), appendBlock, verifyBlock)
 import Blockheader (Blockheader (..), Headerchain (..))
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import MerkleTree (MTree (..), mkMerkleTree)

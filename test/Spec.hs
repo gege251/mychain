@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NumDecimals #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -33,7 +34,7 @@ tests =
               pkh = 1234
               txs = map (snd . Tx.getTxWithId) txsWithIds
            in case Block.appendBlock difficulty 0 txs pkh Main.genesisState of
-                Right _ -> True
+                Right chainState -> Block.verifyChain difficulty chainState
                 Left err -> error (toText err)
     , QC.testProperty "Merklee tree verification" $
         \merkleTree -> MerkleTree.verifyMerkleTree merkleTree

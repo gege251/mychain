@@ -20,6 +20,10 @@ data Headerchain
   | Cons Integer Blockheader Headerchain
   deriving (Show)
 
+chainToList :: Headerchain -> [Blockheader]
+chainToList Nil = []
+chainToList (Cons _ x xs) = x : chainToList xs
+
 doWork :: Integer -> (Int -> Blockheader) -> Int -> (Integer, Blockheader)
 doWork difficulty mkHeader nonce =
   let headerAttempt = mkHeader nonce

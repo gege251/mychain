@@ -62,6 +62,10 @@ getMerkleRoot :: MTree -> Integer
 getMerkleRoot (MLeaf root) = root
 getMerkleRoot (MNode root _ _) = root
 
+getLeaves :: MTree -> [Integer]
+getLeaves (MLeaf leaf) = [leaf]
+getLeaves (MNode _ l r) = getLeaves l <> getLeaves r
+
 -- | Concatenates and hashes two hash numbers (used for Merkle trees)
 hashPair :: Integer -> Integer -> Integer
 hashPair x y | x > y = hashPair y x

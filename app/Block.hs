@@ -1,12 +1,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NumDecimals #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Block where
 
-import Blockheader (Blockheader (..), Headerchain (..), appendHeader)
-import MerkleTree (MTree, getMerkleRoot)
+import Blockheader (Blockheader (..), Headerchain (..), appendHeader, chainToList, verifyHeaders)
+import MerkleTree (MTree, getLeaves, getMerkleRoot, verifyMerkleTree)
 import Relude
 import Relude.Extra.Map as Map
 import Tx
@@ -71,3 +72,22 @@ findPrevSeqId (Cons _ Blockheader {bhMerkleRoot} _) blocks = do
   case find isCoinBase lastTsx of
     Just CoinBase {seqId} -> Right seqId
     _ -> Left "previous coinbase not found"
+
+-- | Verifies the validity of the transactions against the Merkle Tree, but doesn't
+-- cares about the validity of the transactions themselves
+verifyBlock :: (MTree, NonEmpty TxWithId) -> Bool
+verifyBlock (merkleTree, txs) =
+  isTreeValid && treeLeaves == txIds
+  where
+    isTreeValid = verifyMerkleTree merkleTree
+    txIds :: Set Integer = fromList $ map (fst . getTxWithId) $ toList txs
+    treeLeaves :: Set Integer = fromList $ getLeaves merkleTree
+
+verifyChain :: Integer -> BlockchainState -> Bool
+verifyChain difficulty BlockchainState {bsHeaderChain, bsBlocks} =
+  areHeadersValid && areBlocksValid && merkleRoots == merkleRoots'
+  where
+    areHeadersValid = verifyHeaders difficulty bsHeaderChain
+    areBlocksValid = all verifyBlock bsBlocks
+    merkleRoots :: Set Integer = fromList $ Map.keys bsBlocks
+    merkleRoots' :: Set Integer = fromList $ map bhMerkleRoot $ chainToList bsHeaderChain
