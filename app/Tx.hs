@@ -22,7 +22,10 @@ data TxInput = TxInput
 newtype TxWithId = TxWithId {getTxWithId :: (Integer, Tx)} deriving (Show)
 
 data Tx
-  = CoinBase {txOutputs :: NonEmpty UTxO}
+  = CoinBase
+      { seqId :: Int,
+        txOutputs :: NonEmpty UTxO
+      }
   | Tx
       { txInputs :: NonEmpty TxInput,
         txOutputs :: NonEmpty UTxO
@@ -34,7 +37,7 @@ isTx (Tx _ _) = True
 isTx _ = False
 
 isCoinBase :: Tx -> Bool
-isCoinBase (CoinBase _) = True
+isCoinBase (CoinBase _ _) = True
 isCoinBase _ = False
 
 data UTxO = UTxO
@@ -53,26 +56,18 @@ mkTxWithId tx = TxWithId (mkTxId tx, tx)
 
 -- | Verifying the validity of a transaction
 -- This functions only checks the current transaction, without recursively checking previous ones.
-verifyTx :: UTxOSet -> Tx -> Either String UTxOSet
-verifyTx utxoSet tx@(CoinBase _) = Right $ appendToUtxoSet tx utxoSet
+verifyTx :: UTxOSet -> Tx -> Either String (UTxOSet, Int)
+verifyTx utxoSet tx@(CoinBase _ _) = Right (appendToUtxoSet tx utxoSet, 0)
 verifyTx utxoSet tx@Tx {txInputs = txIns, txOutputs = txOuts} = do
   (inputUtxos, updatedUtxoSet) <- findInputUtxos utxoSet txIns
   let inputSum = sum $ map utxoValue inputUtxos
   let outputSum = sum $ map utxoValue $ toList txOuts
 
-  if inputSum < outputSum
+  let fees = inputSum - outputSum
+
+  if fees < 0
     then Left "inputs are not covering the outputs"
-    else Right $ appendToUtxoSet tx updatedUtxoSet
-
-calculateFees :: UTxOSet -> Tx -> Maybe Int
-calculateFees _ (CoinBase _) = Just 0
-calculateFees utxoSet Tx {txInputs = txIns, txOutputs = txOuts} = do
-  (inputUtxos, _) <- rightToMaybe $ findInputUtxos utxoSet txIns
-
-  let inputSum = sum $ map utxoValue inputUtxos
-  let outputSum = sum $ map utxoValue $ toList txOuts
-
-  return $ inputSum - outputSum
+    else Right (appendToUtxoSet tx updatedUtxoSet, fees)
 
 appendToUtxoSet :: Tx -> UTxOSet -> UTxOSet
 appendToUtxoSet tx utxoSet =
@@ -84,7 +79,10 @@ findInputUtxos :: UTxOSet -> NonEmpty TxInput -> Either String ([UTxO], UTxOSet)
 findInputUtxos utxoSet txIns =
   foldlM
     ( \(utxos, UTxOSet utxoSet') TxInput {txInId, txInUtxoIndex, txInScriptSig} -> do
-        utxo <- maybeToRight "input utxo not found or used" $ Map.lookup (txInId, txInUtxoIndex) utxoSet'
+        utxo <-
+          Map.lookup (txInId, txInUtxoIndex) utxoSet'
+            & maybeToRight ("input utxo not found or used: " <> show txInId <> "#" <> show txInUtxoIndex)
+
         let updatedUtxoSet = UTxOSet $ Map.delete (txInId, txInUtxoIndex) utxoSet'
 
         if utxoPubKeyHash utxo == txInScriptSig
