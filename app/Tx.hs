@@ -29,6 +29,14 @@ data Tx
       }
   deriving (Show)
 
+isTx :: Tx -> Bool
+isTx (Tx _ _) = True
+isTx _ = False
+
+isCoinBase :: Tx -> Bool
+isCoinBase (CoinBase _) = True
+isCoinBase _ = False
+
 data UTxO = UTxO
   { utxoPubKeyHash :: Integer,
     utxoValue :: Int

@@ -58,9 +58,8 @@ main :: IO ()
 main = do
   let pkh1 = 432
   let pkh2 = 543
-  let difficulty = 1e71
-  time1 <- floor . toRational <$> getPOSIXTime
-  let b1 = handleError $ appendBlock difficulty time1 [] pkh1 genesisState
+  b1 <- appendBlock' [] pkh1 genesisState
+
   let tx1 =
         Tx
           ( TxInput 78902268065043156483025095612620881616981048192609966680429747496657945621891 0 pkh1
@@ -73,18 +72,25 @@ main = do
               :| []
           )
           (UTxO pkh1 9 :| [])
-  time2 <- floor . toRational <$> getPOSIXTime
-  let b2 = handleError $ appendBlock difficulty time2 [tx1, tx2] pkh1 b1
+
+  b2 <- appendBlock' [tx1, tx2] pkh1 b1
+
   let tx3 =
         Tx
           ( TxInput 39229765972465440429480015190971331080329456376589534437661503206360811729364 0 pkh1
-              :| []
+              :| [ TxInput 78902268065043156483025095612620881616981048192609966680429747496657945621891 0 pkh1
+                 ]
           )
-          (UTxO pkh2 5 :| [UTxO pkh1 3])
-  time3 <- floor . toRational <$> getPOSIXTime
-  let b3 = handleError $ appendBlock difficulty time3 [tx3] pkh1 b2
-  pPrint b3
+          (UTxO pkh2 15 :| [UTxO pkh1 3])
+  b3 <- appendBlock' [tx3] pkh1 b2
 
-handleError :: Either String a -> a
-handleError (Left err) = error (toText err)
-handleError (Right x) = x
+  pPrint b3
+  where
+    appendBlock' txs minerPkh lastState = do
+      time <- floor . toRational <$> getPOSIXTime
+      return $ handleError $ appendBlock difficulty time txs minerPkh lastState
+
+    difficulty = 1e72
+
+    handleError (Left err) = error (toText err)
+    handleError (Right x) = x
