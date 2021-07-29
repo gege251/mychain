@@ -104,5 +104,5 @@ main = do
 
     difficulty = 1e72
 
-    handleError (Left err) = error (toText err)
+    handleError (Left err) = error err
     handleError (Right x) = x

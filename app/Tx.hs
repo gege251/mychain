@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
@@ -56,7 +57,7 @@ mkTxWithId tx = TxWithId (mkTxId tx, tx)
 
 -- | Verifying the validity of a transaction
 -- This functions only checks the current transaction, without recursively checking previous ones.
-verifyTx :: UTxOSet -> Tx -> Either String (UTxOSet, Int)
+verifyTx :: UTxOSet -> Tx -> Either Text (UTxOSet, Int)
 verifyTx utxoSet tx@(CoinBase _ _) = Right (appendToUtxoSet tx utxoSet, 0)
 verifyTx utxoSet tx@Tx {txInputs = txIns, txOutputs = txOuts} = do
   (inputUtxos, updatedUtxoSet) <- findInputUtxos utxoSet txIns
@@ -75,7 +76,7 @@ appendToUtxoSet tx utxoSet =
       newUtxos = UTxOSet $ fromList $ zip (map (txId,) [0 ..]) (toList (txOutputs tx))
    in utxoSet <> newUtxos
 
-findInputUtxos :: UTxOSet -> NonEmpty TxInput -> Either String ([UTxO], UTxOSet)
+findInputUtxos :: UTxOSet -> NonEmpty TxInput -> Either Text ([UTxO], UTxOSet)
 findInputUtxos utxoSet txIns =
   foldlM
     ( \(utxos, UTxOSet utxoSet') TxInput {txInId, txInUtxoIndex, txInScriptSig} -> do

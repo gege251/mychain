@@ -35,7 +35,7 @@ tests =
               txs = map (snd . Tx.getTxWithId) txsWithIds
            in case Block.appendBlock difficulty 0 txs pkh Main.genesisState of
                 Right chainState -> Block.verifyChain difficulty chainState
-                Left err -> error (toText err)
+                Left err -> error err
     , QC.testProperty "Merklee tree verification" $
         \merkleTree -> MerkleTree.verifyMerkleTree merkleTree
     , QC.testProperty "Partial Merklee tree verification" $

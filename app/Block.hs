@@ -31,7 +31,7 @@ data BlockchainState = BlockchainState
 
 generatedCoins = 10
 
-appendBlock :: Integer -> Int -> [Tx] -> Integer -> BlockchainState -> Either String BlockchainState
+appendBlock :: Integer -> Int -> [Tx] -> Integer -> BlockchainState -> Either Text BlockchainState
 appendBlock difficulty time txs minerPkh BlockchainState {bsHeaderChain, bsBlocks, bsUTxOSet}
   | any isCoinBase txs = Left "there can only be one coinbase transaction in a block"
   | otherwise = do
@@ -63,7 +63,7 @@ appendBlock difficulty time txs minerPkh BlockchainState {bsHeaderChain, bsBlock
   where
     verifyTx' (utxoSet, fees) tx = second (+ fees) <$> verifyTx utxoSet tx
 
-findPrevSeqId :: Headerchain -> Map Integer (MTree, NonEmpty TxWithId) -> Either String Int
+findPrevSeqId :: Headerchain -> Map Integer (MTree, NonEmpty TxWithId) -> Either Text Int
 findPrevSeqId Nil blocks = Left "no genesis block found"
 findPrevSeqId (Cons _ Blockheader {bhMerkleRoot} _) blocks = do
   lastBlock <- maybeToRight "previous block not found " $ Map.lookup bhMerkleRoot blocks
@@ -103,6 +103,6 @@ verifyAllTransactions BlockchainState {bsBlocks, bsHeaderChain} =
           let txs = map (snd . getTxWithId) $ concatMap (toList . snd) blocks
               utxoSet = UTxOSet mempty
            in case foldlM (\us tx -> fst <$> verifyTx us tx) utxoSet txs of
-                Left e -> error (toText e)
+                Left e -> error e
                 Right updatedUtxoSet -> do
                   True
